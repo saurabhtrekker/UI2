@@ -1,0 +1,457 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "newStorageAccount": {
+            "type": "string",
+            "metadata": {
+                "description": "This is the name of the your storage account"
+            }
+        },
+        "dnsNameForPublicIP": {
+            "type": "string",
+            "metadata": {
+                "description": "Unique DNS Name for the Public IP used to access PAN Firewall VM."
+            }
+        },
+        "vmName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of PAN VM in the portal"
+            }
+        },
+        "adminUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "UserName for the NAT and PAN firewall VM"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for the NAT and PAN firewall VM"
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_D3",
+                "Standard_D4"
+            ],
+            "metadata": {
+                "description": "This is the size of PAN's firewall VM"
+            }
+        },
+        "srcIPInboundNSG": {
+            "type": "string",
+            "metadata": {
+                "description": "This is the public IP address (run myipaddress in browser) from where you want to login"
+            }
+        },
+        "ipAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.5",
+            "metadata": {
+                "description": "Default IP address prefix"
+            }
+        },
+        "imageSku": {
+            "type": "string",
+            "defaultValue": "vmseriesbyol",
+            "allowedValues": [
+                "vmseriesbyol",
+                "vmseriesbundle1",
+                "vmseriesbundle2"
+            ],
+            "metadata": {
+                "description": "Sku of the PANW image"
+            }
+        },
+        "imageOffer": {
+            "type": "string",
+            "defaultValue": "vm-series-testpass1-preview",
+            "metadata": {
+                "description": "Image Offer of the PANW image"
+            }
+        },
+	"virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "fwVNET",
+            "metadata": {
+                 "description": "Name of the virtual network that the consumer wants to use"
+            }
+        },
+        "virtualNetworkNewOrExisting": {
+            "type": "string",
+            "defaultValue": "new",
+            "allowedValues": [
+                "new",
+                "existing"
+            ],
+            "metadata": {
+                "description": "Identifies whether to use new or existing Virtual Network"
+            }
+        },
+        "virtualNetworkExistingRGName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of resource group of existing Virtual Network (if applicable)"
+            }
+        },
+        "virtualNetworkAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+               "description": "Virtual network address CIDR"
+            }
+        },
+        "subnet0Name": {
+            "type": "string",
+            "defaultValue": "Mgmt",
+            "metadata": {
+               "description": "Subnet for the Mgmt subnet"
+            }
+        },
+        "subnet1Name": {
+            "type": "string",
+            "defaultValue": "Untrust",
+            "metadata": {
+               "description": "Subnet for the Untrust subnet"
+            }
+        },
+        "subnet2Name": {
+            "type": "string",
+            "defaultValue": "Trust",
+            "metadata": {
+                "description": "Subnet for the Trust subnet"
+            }
+        },
+        "subnet0Prefix": {
+            "type": "string",
+            "defaultValue": "192.168.0.0/24",
+            "metadata": {
+                "description": "Mgmt CIDR"
+            }
+        },
+        "subnet1Prefix": {
+            "type": "string",
+            "defaultValue": "192.168.1.0/24",
+            "metadata": {
+                "description": "Untrust CIDR"
+            }
+        },
+        "subnet2Prefix": {
+            "type": "string",
+            "defaultValue": "192.168.0.0/24",
+            "metadata": {
+                "description": "Trust CIDR"
+            }
+        },
+        "subnet0StartAddress": {
+            "type": "string",
+            "defaultValue": "192.168.0.4",
+            "metadata": {
+                "description": "Mgmt start address"
+            }
+         },
+        "subnet1StartAddress": {
+            "type": "string",
+            "defaultValue": "192.168.1.4",
+            "metadata": {
+                "description": "Untrust start address"
+            }
+         },
+        "subnet2StartAddress": {
+            "type": "string",
+            "defaultValue": "192.168.2.4",
+            "metadata": {
+                "description": "Trust start address"
+            }
+         },
+         "templateLocation": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/saurabhtrekker/UI2/master",
+            "metadata": {
+                "description": "Template file location",
+                "artifactsBaseUrl": "Base URL of the Publisher Template gallery package"
+            }
+         }
+    },
+    "variables": {
+	"templateAPIVersion": "2015-01-01",
+        "apiVersion": "2015-06-15",
+        "location": "[resourceGroup().location]",
+        "imagePublisher": "paloaltonetworks",
+        "planvmseriesbyol": {
+           "name": "vmseriesbyol",
+           "product": "[parameters('imageOffer')]",
+           "publisher": "[variables('imagePublisher')]"
+        },
+        "planvmseriesbundle1": {
+           "name": "vmseriesbundle1",
+           "product": "[parameters('imageOffer')]",
+           "publisher": "[variables('imagePublisher')]"
+        },
+        "planvmseriesbundle2": {
+           "name": "vmseriesbundle2",
+           "product": "[parameters('imageOffer')]",
+           "publisher": "[variables('imagePublisher')]"
+        },
+        "imagePlan": "[concat('plan', parameters('imageSku'))]",
+        "imageReferencevmseriesbyol": {
+            "offer": "[parameters('imageOffer')]",
+            "publisher": "[variables('imagePublisher')]",
+            "sku": "vmseriesbyol",
+            "version": "latest"
+        },
+        "imageReference": "[variables(concat('imageReference', parameters('imageSku')))]",
+        "fwpublicIPName": "fwPublicIP",
+        "addNameToConcat": "PA-VM",
+        "nameToUse": "[trim(replace(variables('addNameToConcat'), ' ', '-'))]",
+        "vmName": "[concat('pan-vm-series-', variables('nameToUse'))]",
+        "networkSettings": {
+           "virtualNetworkName": "[parameters('virtualNetworkName')]",
+           "virtualNetworkExistingRGName": "[parameters('virtualNetworkExistingRGName')]",
+           "virtualNetworkAddressPrefix": "[parameters('virtualNetworkAddressPrefix')]",
+           "subnet": {
+             "mgmt": {
+                "name": "[parameters('subnet0Name')]",
+                "prefix": "[parameters('subnet0Prefix')]",
+                "vnet": "[parameters('virtualNetworkName')]"
+             },
+             "untrust": {
+                "name": "[parameters('subnet1Name')]",
+                "prefix": "[parameters('subnet1Prefix')]",
+                "vnet": "[parameters('virtualNetworkName')]"
+             },
+             "trust": {
+                "name": "[parameters('subnet2Name')]",
+                "prefix": "[parameters('subnet2Prefix')]",
+                "vnet": "[parameters('virtualNetworkName')]"
+             }
+           }
+        },
+        "addressPrefix": "[concat(parameters('ipAddressPrefix'), '.0.0/16')]",
+        "nicName": "eth",
+        "publicIPAddressType": "Dynamic",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('networkSettings').virtualNetworkName)]",
+        "nsgname-mgmt": "panwDefaultNSG",
+        "subnet0Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet0Name'))]",
+        "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
+        "subnet2Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet2Name'))]",
+	"templateBaseUrl": "[concat(parameters('templateLocation'), '/')]",
+	"virtualNetworkTemplateUrl": "[concat(variables('templateBaseUrl'), 'vnet-', parameters('virtualNetworkNewOrExisting'), '.json')]"
+    },
+    "resources": [{
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[parameters('newStorageAccount')]",
+        "location": "[variables('location')]",
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('fwpublicIPName')]",
+        "location": "[variables('location')]",
+        "properties": {
+            "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+            "dnsSettings": {
+                "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+            }
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "DefaultNSG",
+        "location": "[variables('location')]",
+        "properties": {
+            "securityRules": [{
+                "name": "Allow-Outside-From-IP",
+                "properties": {
+                    "description": "Rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "[parameters('srcIPInboundNSG')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "Allow-Intra",
+                "properties": {
+                    "description": "Allow intra network traffic",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "[concat(parameters('ipAddressPrefix'), '.0.0/16')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 101,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "Default-Deny",
+                "properties": {
+                    "description": "Default-Deny if we don't match Allow rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Deny",
+                    "priority": 200,
+                    "direction": "Inbound"
+                }
+            }]
+        }
+    }, {
+      "name": "virtual-network",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "[variables('templateAPIVersion')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('virtualNetworkTemplateUrl')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "networkSettings": {
+            "value": "[variables('networkSettings')]"
+          }
+        }
+      }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[concat(variables('nicName'), '0')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/publicIPAddresses/', variables('fwpublicIPName'))]",
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+        ],
+        "tags": {
+            "displayName": "[concat('NetworkInterfaces', '0')]"
+        },
+        "properties": {
+            "ipConfigurations": [{
+                "name": "[concat('ipconfig', '0')]",
+                "properties": {
+                    "privateIPAllocationMethod": "Dynamic",
+                    "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('fwpublicIPName'))]"
+                    },
+                    "subnet": {
+                        "id": "[variables(concat('subnet','0','Ref'))]"
+                    }
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[concat(variables('nicName'), '1')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+        ],
+        "tags": {
+            "displayName": "[concat('NetworkInterfaces', '1')]"
+        },
+        "properties": {
+            "enableIPForwarding": true,
+            "ipConfigurations": [{
+                "name": "[concat('ipconfig', '1')]",
+                "properties": {
+                    "privateIPAllocationMethod": "Dynamic",
+                    "subnet": {
+                        "id": "[variables(concat('subnet','1','Ref'))]"
+                    }
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[concat(variables('nicName'), '2')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+        ],
+        "tags": {
+            "displayName": "[concat('NetworkInterfaces', '2')]"
+        },
+        "properties": {
+            "enableIPForwarding": true,
+            "ipConfigurations": [{
+                "name": "[concat('ipconfig', '2')]",
+                "properties": {
+                    "privateIPAllocationMethod": "Dynamic",
+                    "subnet": {
+                        "id": "[variables(concat('subnet','2','Ref'))]"
+                    }
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "[variables('vmName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Storage/storageAccounts/', parameters('newStorageAccount'))]",
+            "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '0')]",
+            "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '1')]",
+            "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '2')]"
+        ],
+        "properties": {
+            "hardwareProfile": {
+                "vmSize": "[parameters('vmSize')]"
+            },
+            "osProfile": {
+                "computerName": "[variables('vmName')]",
+                "adminUsername": "[parameters('adminUsername')]",
+                "adminPassword": "[parameters('adminPassword')]"
+            },
+            "storageProfile": {
+                "imageReference": "[variables('imageReference')]",
+                "osDisk": {
+                    "name": "osdisk",
+                    "vhd": {
+                        "uri": "[concat('http://',parameters('newStorageAccount'),'.blob.core.windows.net/vhds/', 'osdisk', '-firewall', '.vhd')]"
+                    },
+                    "caching": "ReadWrite",
+                    "createOption": "FromImage"
+                }
+            },
+            "networkProfile": {
+                "networkInterfaces": [{
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName'),'0'))]",
+                    "properties": {
+                        "primary": true
+                    }
+                }, {
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName'),'1'))]",
+                    "properties": {
+                        "primary": false
+                    }
+                }, {
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName'),'2'))]",
+                    "properties": {
+                        "primary": false
+                    }
+                }]
+            }
+        }
+    }]
+}
