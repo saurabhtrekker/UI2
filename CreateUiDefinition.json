@@ -1,0 +1,264 @@
+{
+  "handler": "Microsoft.Compute.MultiVm",
+  "version": "0.0.1-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "adminUsername",
+        "type": "Microsoft.Compute.UserNameTextBox",
+        "label": "Username",
+        "toolTip": "Admin username for the virtual machines. Same Credientials is to SSH to the box.",
+        "osPlatform": "Linux"
+      },
+      {
+        "name": "SSHCredntials",
+        "type": "Microsoft.Compute.CredentialsCombo",
+        "label": {
+                  "authenticationType": "Authentication type",
+                  "password": "Password",
+                  "confirmPassword": "Confirm password",
+                  "sshPublicKey": "SSH public key"
+                },
+        "toolTip": {
+                "authenticationType": "",
+                "password": "",
+                "sshPublicKey": ""
+              },
+         "constraints": {
+                "required": true
+              },
+         "options": {
+              "hideConfirmation": false
+         },
+         "osPlatform": "Linux"
+       },
+       {
+        "name": "newStorageAccount",
+        "type": "Microsoft.Storage.StorageAccountSelector",
+        "label": "Storage Account Name",
+        "defaultValue": {
+            "type": "Standard_LRS"
+        }
+       },
+       {
+        "name": "ipAddressPrefix",
+        "type": "Microsoft.Common.TextBox",
+        "label": "VNET IP address prefix to use for VNET",
+        "toolTip": "VNET IP prefix for vnet",
+        "defaultValue": "192.168",
+         "osPlatform": "Linux"
+       },
+       {
+        "name": "srcIPInboundNSG",
+        "type": "Microsoft.Common.TextBox",
+        "label": "NSG InBound source-IP",
+        "toolTip": "NSG InBound source-IP",
+        "defaultValue": "199.167.55.50/32",
+         "osPlatform": "Linux"
+       },
+       {
+        "name": "vmName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Name of the PA-VM",
+        "toolTip": "PA-VM Name",
+        "constraints": {
+            "required": true,
+            "regex": "^[a-z0-9](?:[a-z0-9]|(\\-(?!\\-))){8,24}[a-z0-9]$|^\\$root$",
+            "validationMessage": "names must be between 8 and 24 characters long, and can contain numbers, lowercase letters and dash"
+         },
+        "osPlatform": "Linux"
+       },
+       {
+        "name": "dnsNameForPublicIP",
+        "type": "Microsoft.Network.PublicIpAddressCombo",
+        "label": {
+            "publicIpAddress": "New public IP name",
+            "domainNameLabel": "Domain name for PANW firewall"
+        },
+        "toolTip": {
+            "publicIpAddress": "Only new public IP is currently supported. Name must be unique across a resource group",
+            "domainNameLabel": "PANW will be accessible from this domain"
+        },
+        "defaultValue": {
+            "publicIpAddressName": "panwIP",
+            "domainNameLabel": "change_me_to_be_unique"
+        },
+        "constraints": {
+            "required": {
+            "domainNameLabel": true
+           }
+        },
+        "options": {
+            "hideNone": true,
+            "hideDomainNameLabel": false
+          }
+        }
+    ],
+    "steps": [
+      {
+        "name": "panvnetconfig",
+        "label": "Networking Configuration",
+        "subLabel": {
+          "preValidation": "Configure PA-VM's networking",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Configure PA-VM's networking",
+        "elements": [
+          {
+               "name": "vnetSpec",
+               "type": "Microsoft.Network.VirtualNetworkCombo",
+               "label": {
+                   "virtualNetwork": "Virtual network",
+                   "subnets": "Subnets"
+               },
+               "toolTip": {
+                   "virtualNetwork": "",
+                   "subnets": ""
+               },
+               "defaultValue": {
+                   "name": "panVnet",
+                   "addressPrefixSize": "/16"
+               },
+               "constraints": {
+                   "minAddressPrefixSize": "/29"
+               },
+               "subnets": {
+                   "subnet0": {
+                       "label": "Management Subnet",
+                       "defaultValue": {
+                           "name": "Mgmt",
+                           "addressPrefixSize": "/24"
+                       },
+                       "constraints": {
+                           "minAddressPrefixSize": "/29",
+                           "minAddressCount": 1,
+                           "requireContiguousAddresses": true
+                       }
+                   },
+                   "subnet1": {
+                       "label": "Untrust Subnet",
+                       "defaultValue": {
+                           "name": "Untrust",
+                           "addressPrefixSize": "/24"
+                       },
+                       "constraints": {
+                           "minAddressPrefixSize": "/29",
+                           "minAddressCount": 4,
+                           "requireContiguousAddresses": true
+                       }
+                   },
+                   "subnet2": {
+                       "label": "Trust Subnet",
+                       "defaultValue": {
+                           "name": "Trust",
+                           "addressPrefixSize": "/24"
+                       },
+                       "constraints": {
+                           "minAddressPrefixSize": "/29",
+                           "minAddressCount": 4,
+                           "requireContiguousAddresses": true
+                       }
+                   }
+ 	        }
+	  }
+         ]
+      },
+      {
+        "name": "SamplePANVMConfig",
+        "label": "Palo Alto Networks VM config",
+        "subLabel": {
+          "preValidation": "Configure PA-VM",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Palo Alto Networks VM config",
+        "elements": [
+          {
+            "name": "vmSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Virtual machine size",
+            "toolTip": "The size of virtual machine to provision for each cluster node.",
+            "recommendedSizes": [
+              "Standard_D3",
+              "Standard_D4"
+            ],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D3",
+                "Standard_D4"
+              ]
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "paloaltonetworks",
+              "offer": "vm-series-testpass1-preview",
+              "sku": "vmseriesbyol"
+            }
+          }, {
+            "name": "imageSku",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Image SKU for PANW firewall",
+            "defaultValue": "VM Series BYOL",
+            "toolTip": "Image SKU for PANW firewall",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "VM Series BYOL",
+		  "value": "vmseriesboyl"
+                },
+                {
+                  "label": "VM Series Bundle1",
+		  "value": "vmseriesbundle1"
+                },
+                {
+                  "label": "VM Series Bundle2",
+		  "value": "vmseriesbundle2"
+                }
+              ],
+	      "required": true
+            }
+          }, {
+            "name": "imageOffer",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Image Offer of PANW firewall",
+            "defaultValue": "VM Series TestPass1 Preview",
+            "toolTip": "Image Offer of PANW firewall",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "VM Series TestPass1 Preview",
+                  "value": "vm-series-testpass1-preview"
+                }
+              ],
+              "required": true
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "newStorageAccount": "[basics('newStorageAccount')]",
+      "ipAddressPrefix": "[basics('ipAddressPrefix')]",
+      "srcIPInboundNSG": "[basics('srcIPInboundNSG')]",
+      "vmName": "[basics('vmName')]",
+      "dnsNameForPublicIP": "[basics('dnsNameForPublicIP')]",
+      "adminUsername": "[basics('adminUsername')]",
+      "vmSize": "[steps('SamplePANVMConfig').vmSize]",
+      "adminPassword": "[basics('SSHCredntials').password]",
+      "imageOffer": "[steps('SamplePANVMConfig').imageOffer]",
+      "imageSku": "[steps('SamplePANVMConfig').imageSku]",
+      "virtualNetworkName": "[steps('panvnetconfig').vnetSpec.name]",
+      "virtualNetworkNewOrExisting": "[steps('panvnetconfig').vnetSpec.newOrExisting]",
+      "virtualNetworkExistingRGName": "[steps('panvnetconfig').vnetSpec.resourceGroup]",
+      "virtualNetworkAddressPrefix": "[steps('panvnetconfig').vnetSpec.addressPrefix]",
+      "subnet0Name": "[steps('panvnetconfig').vnetSpec.subnets.subnet0.name]",
+      "subnet1Name": "[steps('panvnetconfig').vnetSpec.subnets.subnet1.name]",
+      "subnet2Name": "[steps('panvnetconfig').vnetSpec.subnets.subnet2.name]",
+      "subnet0Prefix": "[steps('panvnetconfig').vnetSpec.subnets.subnet0.addressPrefix]",
+      "subnet1Prefix": "[steps('panvnetconfig').vnetSpec.subnets.subnet1.addressPrefix]",
+      "subnet2Prefix": "[steps('panvnetconfig').vnetSpec.subnets.subnet2.addressPrefix]",
+      "subnet0StartAddress": "[steps('panvnetconfig').vnetSpec.subnets.subnet0.startAddress]",
+      "subnet1StartAddress": "[steps('panvnetconfig').vnetSpec.subnets.subnet1.startAddress]",
+      "subnet2StartAddress": "[steps('panvnetconfig').vnetSpec.subnets.subnet2.startAddress]"
+    }
+  }
+}

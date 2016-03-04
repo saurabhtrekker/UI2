@@ -76,7 +76,7 @@
         },
 	"virtualNetworkName": {
             "type": "string",
-            "defaultValue": "panwVNET",
+            "defaultValue": "fwVNET",
             "metadata": {
                  "description": "Name of the virtual network that the consumer wants to use"
             }
@@ -232,7 +232,6 @@
              }
            }
         },
-        "addressPrefix": "[concat(parameters('ipAddressPrefix'), '.0.0/16')]",
         "nicName": "eth",
         "publicIPAddressType": "Dynamic",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
@@ -240,75 +239,117 @@
         "subnet0Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet0Name'))]",
         "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
         "subnet2Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet2Name'))]",
-	"sharedTemplateUrl": "[concat(variables('templateBaseUrl'), 'shared-resources.json')]",
 	"templateBaseUrl": "[concat(parameters('templateLocation'), '/')]",
 	"virtualNetworkTemplateUrl": "[concat(variables('templateBaseUrl'), 'vnet-', parameters('virtualNetworkNewOrExisting'), '.json')]"
     },
-    "resources": [
-    {
-      "name": "shared",
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "[variables('templateAPIVersion')]",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('sharedTemplateUrl')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "newStorageAccount": {
-            "value": "[parameters('newStorageAccount')]"
-          },
-          "fwpublicIPName": {
-            "value": "[variables('fwpublicIPName')]"
-          },
-          "publicIPAddressType": {
-            "value": "[variables('publicIPAddressType')]"
-          },
-          "dnsNameForPublicIP": {
-            "value": "[parameters('dnsNameForPublicIP')]"
-          },
-          "srcIPInboundNSG": {
-            "value": "[parameters('srcIPInboundNSG')]"
-          },
-          "ipAddressPrefix": {
-            "value": "[parameters('ipAddressPrefix')]"
-          }
+    "resources": [{
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[parameters('newStorageAccount')]",
+        "location": "[variables('location')]",
+        "properties": {
+            "accountType": "Standard_LRS"
         }
-      }
     }, {
-      "name": "virtual-network",
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "[variables('templateAPIVersion')]",
-      "dependsOn": [
-          "[concat('Microsoft.Resources/deployments/', 'shared')]"
-      ],
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('virtualNetworkTemplateUrl')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "networkSettings": {
-            "value": "[variables('networkSettings')]"
-          }
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('fwpublicIPName')]",
+        "location": "[variables('location')]",
+        "properties": {
+            "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+            "dnsSettings": {
+                "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+            }
         }
-      }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "[variables('nsgname-mgmt')]",
+        "location": "[variables('location')]",
+        "properties": {
+            "securityRules": [{
+                "name": "Allow-Outside-From-IP",
+                "properties": {
+                    "description": "Rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "[parameters('srcIPInboundNSG')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "Allow-Intra",
+                "properties": {
+                    "description": "Allow intra network traffic",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "[concat(parameters('ipAddressPrefix'), '.0.0/16')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 101,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "Default-Deny",
+                "properties": {
+                    "description": "Default-Deny if we don't match Allow rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Deny",
+                    "priority": 200,
+                    "direction": "Inbound"
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[parameters('virtualNetworkName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgname-mgmt'))]"
+        ],
+        "properties": {
+            "addressSpace": {
+                "addressPrefixes": [
+                    "[parameters('virtualNetworkAddressPrefix')]"
+                ]
+            },
+            "subnets": [{
+                "name": "[variables('subnet0Name')]",
+                "properties": {
+                    "addressPrefix": "[variables('subnet0Prefix')]",
+                    "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname-mgmt'))]"
+                    }
+                }
+            }, {
+                "name": "[variables('subnet1Name')]",
+                "properties": {
+                    "addressPrefix": "[variables('subnet1Prefix')]"
+                }
+            }, {
+                "name": "[variables('subnet2Name')]",
+                "properties": {
+                    "addressPrefix": "[variables('subnet2Prefix')]"
+                }
+            }]
+        }
     }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Network/networkInterfaces",
         "name": "[concat(variables('nicName'), '0')]",
         "location": "[variables('location')]",
         "dependsOn": [
-            "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+            "[concat('Microsoft.Network/publicIPAddresses/', variables('fwpublicIPName'))]",
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
         ],
         "tags": {
             "displayName": "[concat('NetworkInterfaces', '0')]"
@@ -333,8 +374,7 @@
         "name": "[concat(variables('nicName'), '1')]",
         "location": "[variables('location')]",
         "dependsOn": [
-            "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
         ],
         "tags": {
             "displayName": "[concat('NetworkInterfaces', '1')]"
@@ -357,8 +397,7 @@
         "name": "[concat(variables('nicName'), '2')]",
         "location": "[variables('location')]",
         "dependsOn": [
-            "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
         ],
         "tags": {
             "displayName": "[concat('NetworkInterfaces', '2')]"
@@ -381,11 +420,10 @@
         "name": "[variables('vmName')]",
         "location": "[variables('location')]",
         "dependsOn": [
+            "[concat('Microsoft.Storage/storageAccounts/', parameters('newStorageAccount'))]",
             "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '0')]",
             "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '1')]",
-            "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '2')]",
-            "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+            "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '2')]"
         ],
         "properties": {
             "hardwareProfile": {
