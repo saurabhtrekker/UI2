@@ -49,6 +49,12 @@
             "metadata": {
                 "description": "Trust CIDR"
             }
+        },
+        "nameNSG": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of NSG"
+            }
         }
   },
   "variables" : {
@@ -88,7 +94,10 @@
           {
             "name": "[parameters('subnet0Name')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet0Prefix')]"
+              "addressPrefix": "[parameters('subnet0Prefix')]",
+              "networkSecurityGroup": {
+                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nameNSG'))]"
+              }
             }
           }
         ]
