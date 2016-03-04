@@ -74,15 +74,21 @@
         },
         "subnets": [
           {
-            "name": "[parameters('subnet0Name')]",
-            "properties": {
-              "addressPrefix": "[parameters('subnet0Prefix')]"
-            }
-          },
-          {
             "name": "[parameters('subnet1Name')]",
             "properties": {
               "addressPrefix": "[parameters('subnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet2Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet0Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet0Prefix')]"
             }
           }
         ]
