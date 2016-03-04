@@ -210,28 +210,6 @@
         "addNameToConcat": "PA-VM",
         "nameToUse": "[trim(replace(variables('addNameToConcat'), ' ', '-'))]",
         "vmName": "[concat('pan-vm-series-', variables('nameToUse'))]",
-        "networkSettings": {
-           "virtualNetworkName": "[parameters('virtualNetworkName')]",
-           "virtualNetworkExistingRGName": "[parameters('virtualNetworkExistingRGName')]",
-           "virtualNetworkAddressPrefix": "[parameters('virtualNetworkAddressPrefix')]",
-           "subnet": {
-             "mgmt": {
-                "name": "[parameters('subnet0Name')]",
-                "prefix": "[parameters('subnet0Prefix')]",
-                "vnet": "[parameters('virtualNetworkName')]"
-             },
-             "untrust": {
-                "name": "[parameters('subnet1Name')]",
-                "prefix": "[parameters('subnet1Prefix')]",
-                "vnet": "[parameters('virtualNetworkName')]"
-             },
-             "trust": {
-                "name": "[parameters('subnet2Name')]",
-                "prefix": "[parameters('subnet2Prefix')]",
-                "vnet": "[parameters('virtualNetworkName')]"
-             }
-           }
-        },
         "addressPrefix": "[concat(parameters('ipAddressPrefix'), '.0.0/16')]",
         "nicName": "eth",
         "publicIPAddressType": "Dynamic",
@@ -293,11 +271,29 @@
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
+          "virtualNetworkName": {
+            "value": "[parameters('virtualNetworkName')]"
           },
-          "networkSettings": {
-            "value": "[variables('networkSettings')]"
+          "virtualNetworkAddressPrefix": {
+            "value": "[parameters('virtualNetworkAddressPrefix')]"
+          },
+          "subnet0Name": {
+            "value": "[parameters('subnet0Name')]"
+          },
+          "subnet1Name": {
+            "value": "[parameters('subnet1Name')]"
+          },
+          "subnet2Name": {
+            "value": "[parameters('subnet2Name')]"
+          },
+          "subnet0Prefix": {
+            "value": "[parameters('subnet0Prefix')]"
+          },
+          "subnet1Prefix": {
+            "value": "[parameters('subnet1Prefix')]"
+          },
+          "subnet2Prefix": {
+            "value": "[parameters('subnet2Prefix')]"
           }
         }
       }
