@@ -46,8 +46,7 @@
     }
   },
   "variables": {
-    "templateAPIVersion": "2015-01-01",
-    "resourceAPIVersion": "2015-06-15",
+    "apiVersion": "2015-06-15",
     "nsgname-mgmt": "panwDefaultNSG"
   },
   "resources": [
