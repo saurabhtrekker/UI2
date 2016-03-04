@@ -2,28 +2,60 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "location": {
-      "type": "string"
-    },
-    "networkSettings": {
-      "type": "object",
-      "metadata": {
-        "description": "Network settings object"
-      }
-    }
+        "virtualNetworkName": {
+            "type": "string",
+            "metadata": {
+               "description": "virtualNetworkName"
+            }
+        },
+        "virtualNetworkAddressPrefix": {
+            "type": "string",
+            "metadata": {
+               "description": "virtualNetworkAddressPrefix"
+            }
+        },
+        "subnet0Name": {
+            "type": "string",
+            "metadata": {
+               "description": "Subnet for the Mgmt subnet"
+            }
+        },
+        "subnet1Name": {
+            "type": "string",
+            "metadata": {
+               "description": "Subnet for the Untrust subnet"
+            }
+        },
+        "subnet2Name": {
+            "type": "string",
+            "metadata": {
+                "description": "Subnet for the Trust subnet"
+            }
+        },
+        "subnet0Prefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Mgmt CIDR"
+            }
+        },
+        "subnet1Prefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Untrust CIDR"
+            }
+        },
+        "subnet2Prefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Trust CIDR"
+            }
+        }
   },
   "variables" : {
     "templateAPIVersion": "2015-01-01",
     "resourceAPIVersion": "2015-06-15",
-    "virtualNetworkName": "[parameters('networkSettings').virtualNetworkName]",
-    "virtualNetworkAddressPrefix": "[parameters('networkSettings').virtualNetworkAddressPrefix]",
+    "location": "[resourceGroup().location]",
     "virtualNetworkId" : "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
-    "subnet0Name": "[parameters('networkSettings').subnet.mgmt.name]",
-    "subnet1Name": "[parameters('networkSettings').subnet.untrust.name]",
-    "subnet2Name": "[parameters('networkSettings').subnet.trust.name]",
-    "subnet0Prefix": "[parameters('networkSettings').subnet.mgmt.prefix]",
-    "subnet1Prefix": "[parameters('networkSettings').subnet.untrust.prefix]",
-    "subnet2Prefix": "[parameters('networkSettings').subnet.trust.prefix]",
     "subnet0Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',variables('subnet0Name'))]",
     "subnet1Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',variables('subnet1Name'))]",
     "subnet2Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',variables('subnet2Name'))]"
@@ -32,31 +64,31 @@
     {
       "apiVersion": "[variables('resourceAPIVersion')]",
       "type": "Microsoft.Network/virtualNetworks",
-      "name": "[variables('virtualNetworkName')]",
-      "location": "[parameters('location')]",
+      "name": "[parameters('virtualNetworkName')]",
+      "location": "[variables('location')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('virtualNetworkAddressPrefix')]"
+            "[parameters('virtualNetworkAddressPrefix')]"
           ]
         },
         "subnets": [
           {
-            "name": "[variables('subnet0Name')]",
+            "name": "[parameters('subnet0Name')]",
             "properties": {
-              "addressPrefix": "[variables('subnet0Prefix')]"
+              "addressPrefix": "[parameters('subnet0Prefix')]"
             }
           },
           {
-            "name": "[variables('subnet1Name')]",
+            "name": "[parameters('subnet1Name')]",
             "properties": {
-              "addressPrefix": "[variables('subnet1Prefix')]"
+              "addressPrefix": "[parameters('subnet1Prefix')]"
             }
           },
           {
-            "name": "[variables('subnet2Name')]",
+            "name": "[parameters('subnet2Name')]",
             "properties": {
-              "addressPrefix": "[variables('subnet2Prefix')]"
+              "addressPrefix": "[parameters('subnet2Prefix')]"
             }
           }
         ]
