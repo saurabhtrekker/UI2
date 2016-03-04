@@ -1,0 +1,122 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location where resources will be provisioned"
+      }
+    },
+    "newStorageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "newStorageAccount"
+      }
+    },
+    "fwpublicIPName": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      }
+    },
+    "publicIPAddressType": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      }
+    },
+    "dnsNameForPublicIP": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      }
+    },
+    "srcIPInboundNSG": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      }
+    },
+    "ipAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": ""
+      }
+    }
+  },
+  "variables": {
+    "templateAPIVersion": "2015-01-01",
+    "resourceAPIVersion": "2015-06-15",
+    "nsgname-mgmt": "panwDefaultNSG"
+  },
+  "resources": [
+    {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[parameters('newStorageAccount')]",
+        "location": "[parameters('location')]",
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('fwpublicIPName')]",
+        "location": "[parameters('location')]",
+        "properties": {
+            "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+            "dnsSettings": {
+                "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+            }
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "[variables('nsgname-mgmt')]",
+        "location": "[parameters('location')]",
+        "properties": {
+            "securityRules": [{
+                "name": "Allow-Outside-From-IP",
+                "properties": {
+                    "description": "Rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "[parameters('srcIPInboundNSG')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "Allow-Intra",
+                "properties": {
+                    "description": "Allow intra network traffic",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "[concat(parameters('ipAddressPrefix'), '.0.0/16')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 101,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "Default-Deny",
+                "properties": {
+                    "description": "Default-Deny if we don't match Allow rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Deny",
+                    "priority": 200,
+                    "direction": "Inbound"
+                }
+            }]
+        }
+    }
+  ]
+}
