@@ -14,16 +14,40 @@
                "description": "virtualNetworkAddressPrefix"
             }
         },
-        "subnetName": {
+        "subnet0Name": {
             "type": "string",
             "metadata": {
                "description": "Subnet for the Mgmt subnet"
             }
         },
-        "subnetPrefix": {
+        "subnet1Name": {
+            "type": "string",
+            "metadata": {
+               "description": "Subnet for the Untrust subnet"
+            }
+        },
+        "subnet2Name": {
+            "type": "string",
+            "metadata": {
+                "description": "Subnet for the Trust subnet"
+            }
+        },
+        "subnet0Prefix": {
             "type": "string",
             "metadata": {
                 "description": "Mgmt CIDR"
+            }
+        },
+        "subnet1Prefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Untrust CIDR"
+            }
+        },
+        "subnet2Prefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Trust CIDR"
             }
         },
         "nameNSG": {
@@ -38,7 +62,9 @@
     "resourceAPIVersion": "2015-06-15",
     "location": "[resourceGroup().location]",
     "virtualNetworkId" : "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
-    "subnetRef" : "[concat(variables('virtualNetworkId'),'/subnets/',parameters('subnetName'))]"
+    "subnet0Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',parameters('subnet0Name'))]",
+    "subnet1Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',parameters('subnet1Name'))]",
+    "subnet2Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',parameters('subnet2Name'))]"
   },
   "resources": [
     {
@@ -54,9 +80,24 @@
         },
         "subnets": [
           {
-            "name": "[parameters('subnetName')]",
+            "name": "[parameters('subnet1Name')]",
             "properties": {
-              "addressPrefix": "[parameters('subnetPrefix')]"
+              "addressPrefix": "[parameters('subnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet2Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet0Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet0Prefix')]",
+              "networkSecurityGroup": {
+                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nameNSG'))]"
+              }
             }
           }
         ]
@@ -64,8 +105,16 @@
     }
   ],
   "outputs": {
-    "subnetRef": {
-      "value": "[variables('subnetRef')]",
+    "subnet0Ref": {
+      "value": "[variables('subnet0Ref')]",
+      "type": "string"
+    },
+    "subnet1Ref": {
+      "value": "[variables('subnet1Ref')]",
+      "type": "string"
+    },
+    "subnet2Ref": {
+      "value": "[variables('subnet2Ref')]",
       "type": "string"
     }
   }
