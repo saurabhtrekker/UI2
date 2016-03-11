@@ -58,8 +58,7 @@
         }
   },
   "variables" : {
-    "templateAPIVersion": "2015-01-01",
-    "resourceAPIVersion": "2015-06-15",
+    "resourceAPIVersion": "2015-05-01-preview",
     "location": "[resourceGroup().location]",
     "virtualNetworkId" : "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
     "subnet0Ref" : "[concat(variables('virtualNetworkId'),'/subnets/',parameters('subnet0Name'))]",
