@@ -183,29 +183,6 @@
         "apiVersion": "2015-06-15",
         "location": "[resourceGroup().location]",
         "imagePublisher": "paloaltonetworks",
-        "planvmseriesbyol": {
-           "name": "vmseriesbyol",
-           "product": "[parameters('imageOffer')]",
-           "publisher": "[variables('imagePublisher')]"
-        },
-        "planvmseriesbundle1": {
-           "name": "vmseriesbundle1",
-           "product": "[parameters('imageOffer')]",
-           "publisher": "[variables('imagePublisher')]"
-        },
-        "planvmseriesbundle2": {
-           "name": "vmseriesbundle2",
-           "product": "[parameters('imageOffer')]",
-           "publisher": "[variables('imagePublisher')]"
-        },
-        "imagePlan": "[concat('plan', parameters('imageSku'))]",
-        "imageReferencevmseriesbyol": {
-            "offer": "[parameters('imageOffer')]",
-            "publisher": "[variables('imagePublisher')]",
-            "sku": "vmseriesbyol",
-            "version": "latest"
-        },
-        "imageReference": "[variables(concat('imageReference', parameters('imageSku')))]",
         "fwpublicIPName": "fwPublicIP",
         "addNameToConcat": "PA-VM",
         "nameToUse": "[trim(replace(variables('addNameToConcat'), ' ', '-'))]",
@@ -220,7 +197,30 @@
         "subnet2Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet2Name'))]",
 	"sharedTemplateUrl": "[concat(variables('templateBaseUrl'), 'shared-resources.json')]",
 	"templateBaseUrl": "[concat(parameters('templateLocation'), '/')]",
-	"virtualNetworkTemplateUrl": "[concat(variables('templateBaseUrl'), 'vnet-', parameters('virtualNetworkNewOrExisting'), '.json')]"
+	"virtualNetworkTemplateUrl": "[concat(variables('templateBaseUrl'), 'vnet-', parameters('virtualNetworkNewOrExisting'), '.json')]",
+	"subnets": [
+          {
+            "name": "[parameters('subnet1Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet2Prefix')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet0Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet0Prefix')]",
+              "networkSecurityGroup": {
+                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname-mgmt'))]"
+              }
+            }
+          }
+	]
     },
     "resources": [
     {
@@ -277,23 +277,8 @@
           "virtualNetworkAddressPrefix": {
             "value": "[parameters('virtualNetworkAddressPrefix')]"
           },
-          "subnet0Name": {
-            "value": "[parameters('subnet0Name')]"
-          },
-          "subnet1Name": {
-            "value": "[parameters('subnet1Name')]"
-          },
-          "subnet2Name": {
-            "value": "[parameters('subnet2Name')]"
-          },
-          "subnet0Prefix": {
-            "value": "[parameters('subnet0Prefix')]"
-          },
-          "subnet1Prefix": {
-            "value": "[parameters('subnet1Prefix')]"
-          },
-          "subnet2Prefix": {
-            "value": "[parameters('subnet2Prefix')]"
+          "subnets": {
+            "value": "[variables('subnets')]"
           }
         }
       }
@@ -393,7 +378,12 @@
                 "adminPassword": "[parameters('adminPassword')]"
             },
             "storageProfile": {
-                "imageReference": "[variables('imageReference')]",
+                "imageReference": {
+                    "publisher": "[variables('imagePublisher')]",
+                    "offer": "[parameters('imageOffer')]",
+                    "sku": "[parameters('imageSku')]",
+                    "version": "latest"
+                },
                 "osDisk": {
                     "name": "osdisk",
                     "vhd": {

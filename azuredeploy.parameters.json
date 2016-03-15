@@ -9,13 +9,13 @@
       "value": "Hello!"
     },
     "newStorageAccount": {
-      "value": "smstoragewestus"
+      "value": "samisratrial1"
     },
     "dnsNameForPublicIP": {
-      "value": "panos-sm-vm-series-fw40"
+      "value": "panos-sm-vm-series-fw50"
     },
     "vmName": {
-      "value": "panos-vm-series-40"
+      "value": "panos-vm-series-50"
     },
     "vmSize": {
       "value": "Standard_D3"
