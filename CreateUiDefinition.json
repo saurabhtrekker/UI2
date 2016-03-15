@@ -236,11 +236,11 @@
       }
     ],
     "outputs": {
-      "newStorageAccount": "[basics('newStorageAccount')]",
+      "newStorageAccount": "[basics('newStorageAccount').newStorageAccount.name]",
       "ipAddressPrefix": "[basics('ipAddressPrefix')]",
       "srcIPInboundNSG": "[basics('srcIPInboundNSG')]",
       "vmName": "[basics('vmName')]",
-      "dnsNameForPublicIP": "[basics('dnsNameForPublicIP')]",
+      "dnsNameForPublicIP": "[basics('dnsNameForPublicIP').dnsNameForPublicIP.domainNameLabel]",
       "adminUsername": "[basics('adminUsername')]",
       "vmSize": "[steps('SamplePANVMConfig').vmSize]",
       "adminPassword": "[basics('SSHCredntials').password]",
