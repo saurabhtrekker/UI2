@@ -3,16 +3,10 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
         "virtualNetworkName": {
-            "type": "string",
-            "metadata": {
-               "description": "virtualNetworkName"
-            }
+            "type": "string"
         },
         "virtualNetworkAddressPrefix": {
-            "type": "string",
-            "metadata": {
-               "description": "virtualNetworkAddressPrefix"
-            }
+            "type": "string"
         },
         "subnets": {
             "type": "array"

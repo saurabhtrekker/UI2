@@ -180,7 +180,7 @@
     },
     "variables": {
 	"templateAPIVersion": "2015-01-01",
-        "apiVersion": "2015-06-15",
+        "apiVersion": "2015-01-01",
         "location": "[resourceGroup().location]",
         "imagePublisher": "paloaltonetworks",
         "fwpublicIPName": "fwPublicIP",
@@ -200,6 +200,15 @@
 	"virtualNetworkTemplateUrl": "[concat(variables('templateBaseUrl'), 'vnet-', parameters('virtualNetworkNewOrExisting'), '.json')]",
 	"subnets": [
           {
+            "name": "[parameters('subnet0Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet0Prefix')]",
+              "networkSecurityGroup": {
+                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname-mgmt'))]"
+              }
+            }
+          },
+          {
             "name": "[parameters('subnet1Name')]",
             "properties": {
               "addressPrefix": "[parameters('subnet1Prefix')]"
@@ -209,15 +218,6 @@
             "name": "[parameters('subnet2Name')]",
             "properties": {
               "addressPrefix": "[parameters('subnet2Prefix')]"
-            }
-          },
-          {
-            "name": "[parameters('subnet0Name')]",
-            "properties": {
-              "addressPrefix": "[parameters('subnet0Prefix')]",
-              "networkSecurityGroup": {
-                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname-mgmt'))]"
-              }
             }
           }
 	]
@@ -258,7 +258,7 @@
         }
       }
     }, {
-      "name": "virtual-network",
+      "name": "VirtualNetworkSetup",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "[variables('templateAPIVersion')]",
       "dependsOn": [
@@ -289,7 +289,7 @@
         "location": "[variables('location')]",
         "dependsOn": [
             "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+	    "[concat('Microsoft.Resources/deployments/', 'VirtualNetworkSetup')]"
         ],
         "tags": {
             "displayName": "[concat('NetworkInterfaces', '0')]"
@@ -315,7 +315,7 @@
         "location": "[variables('location')]",
         "dependsOn": [
             "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+	    "[concat('Microsoft.Resources/deployments/', 'VirtualNetworkSetup')]"
         ],
         "tags": {
             "displayName": "[concat('NetworkInterfaces', '1')]"
@@ -339,7 +339,7 @@
         "location": "[variables('location')]",
         "dependsOn": [
             "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+	    "[concat('Microsoft.Resources/deployments/', 'VirtualNetworkSetup')]"
         ],
         "tags": {
             "displayName": "[concat('NetworkInterfaces', '2')]"
@@ -361,12 +361,17 @@
         "type": "Microsoft.Compute/virtualMachines",
         "name": "[variables('vmName')]",
         "location": "[variables('location')]",
+        "plan": {
+           "name": "[parameters('imageSku')]",
+           "product": "[parameters('imageOffer')]",
+           "publisher": "[variables('imagePublisher')]"
+        },
         "dependsOn": [
             "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '0')]",
             "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '1')]",
             "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '2')]",
             "[concat('Microsoft.Resources/deployments/', 'shared')]",
-	    "[concat('Microsoft.Resources/deployments/', 'virtual-network')]"
+	    "[concat('Microsoft.Resources/deployments/', 'VirtualNetworkSetup')]"
         ],
         "properties": {
             "hardwareProfile": {
