@@ -20,7 +20,7 @@
   },
   "variables" : {
     "resourceAPIVersion": "2015-06-15",
-    "location": "[resourceGroup().location]",
+    "location": "[resourceGroup().location]"
   },
   "resources": [
     {
